@@ -663,11 +663,11 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
     setAppointments(grouped);
   }, [citasData]);
 
-  const handleInputChange = (e) => {
+  // Handler de input reescrito y optimizado para evitar el bug de re-render/foco
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    // CORRECCIÓN FINAL BUG INPUT: Uso de useCallback con dependencias correctas
     setForm(prev => ({ ...prev, [name]: value }));
-  };
+  }, [setForm]);
 
   const handleDateChange = (date) => {
     setSelectedDay(date);
@@ -969,20 +969,22 @@ const Nominas = () => {
   const [form, setForm] = useState({
     category: 'Vigilante Seguridad', antigüedad: 0, extra_hours: 0, nocturnity_hours: 0, irpf_percent: 15, prorrateo: 'No', festivos: 0, residencia_melilla: 'No',
   });
-  // Actualizado de trienios a quinquenios (5 años)
+  // Antigüedad en quinquenios (5 años)
   const [quinquenios, setQuinquenios] = useState(0); 
 
-  const handleInputChange = (e) => {
+  // Handler de input reescrito y optimizado
+  const handleInputChange = useCallback((e) => {
     const { name, value, type } = e.target;
-    // CORRECCIÓN CLAVE: Asegura la actualización correcta del estado en cada pulsación.
-    setForm(prev => ({ ...prev, [name]: type === 'number' ? Number(value) : value }));
+    const finalValue = type === 'number' ? Number(value) : value;
+
+    setForm(prev => ({ ...prev, [name]: finalValue }));
 
     if (name === 'antigüedad') {
-      const years = Number(value);
       // Cálculo de quinquenios
-      setQuinquenios(Math.floor(years / 5)); 
+      setQuinquenios(Math.floor(finalValue / 5)); 
     }
-  };
+  }, [setForm, setQuinquenios]);
+
 
   const calculateNomina = useMemo(() => {
     const { category, extra_hours, nocturnity_hours, irpf_percent, prorrateo, festivos, residencia_melilla } = form;
@@ -1366,12 +1368,10 @@ const Escritos = () => {
         setGeneratedText('');
     }, [selectedEscrito]);
     
-    const handleFieldChange = (e) => {
+    const handleFieldChange = useCallback((e) => {
         const { name, value } = e.target;
-        // La corrección ya está aplicada en la estructura principal del App.js,
-        // asegurando la estabilidad del input.
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, [setFormData]);
 
     // ... (rest of Escritos component logic)
 
@@ -1698,10 +1698,10 @@ const PRL = () => {
         { title: "Actuación Sindical y Legal", desc: "Si la empresa no actúa o la resolución es insatisfactoria, CCOO te acompañará a la Inspección de Trabajo, interpondrá denuncia por vulneración de derechos fundamentales o iniciará el proceso judicial (Art. 50 ET)." },
     ];
 
-    const handleInputChange = (e) => {
+    const handleInputChange = useCallback((e) => {
         const { name, value, type, checked } = e.target;
         setRiskForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    };
+    }, [setRiskForm]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -1835,10 +1835,10 @@ const Afiliacion = () => {
         { name: 'Francisco Aguilera', role: 'Secretario Sección Sindical', phone: FA_PHONE, wa: FA_PHONE, img: 'https://placehold.co/100x100/DC2626/FFFFFF?text=FA', bio: 'Especialista en PRL, vigilancia de la salud y protocolo de acoso.' }
     ];
 
-    const handleInputChange = (e) => {
+    const handleInputChange = useCallback((e) => {
         const { name, value, checked, type } = e.target;
         setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    };
+    }, [setForm]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
