@@ -666,6 +666,7 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
   // Handler de input reescrito y optimizado para evitar el bug de re-render/foco
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
+    // CRÍTICO: Aseguramos la inmutabilidad y la actualización atómica del estado.
     setForm(prev => ({ ...prev, [name]: value }));
   }, [setForm]);
 
@@ -847,7 +848,7 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
     );
   };
 
-  const TimeSelector = () => (
+  const TimeSelector = useMemo(() => () => (
     <Card title="2. Selecciona Hora y Delegado" icon="⏱️" className="mt-6">
       <div className="flex flex-col space-y-3">
         {form.date ? (
@@ -879,9 +880,9 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
         )}
       </div>
     </Card>
-  );
+  ), [form.date, form.time, getAvailableSlots, handleInputChange]);
 
-  const FormularioCita = () => (
+  const FormularioCita = useMemo(() => () => (
     <Card title="3. Rellena tus Datos y Motivo" icon="👤" className="mt-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -920,9 +921,9 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
         </p>
       </form>
     </Card>
-  );
+  ), [form, handleInputChange, handleSubmit, citasLoading]);
 
-  const CitasHistory = () => (
+  const CitasHistory = useMemo(() => () => (
     <Card title="Historial de Citas Solicitadas (Tus Citas)" icon="🗄️" className="mt-6">
       <div className="space-y-3 max-h-64 overflow-y-auto">
         {citasData.filter(c => c.creatorId === userId).length > 0 ? (
@@ -943,7 +944,8 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
         )}
       </div>
     </Card>
-  );
+  ), [citasData, userId]);
+
 
   return (
     <PageLayout title="Sistema de Citas Automatizado" logo={true}>
@@ -1569,7 +1571,7 @@ const FAQ = () => {
 
     const isFavorite = (id) => favorites.some(fav => fav.id === id);
     
-    const CategorySelector = () => (
+    const CategorySelector = useMemo(() => () => (
         <div className="flex flex-wrap gap-2 mb-6">
             {['Todas', ...FAQ_CATEGORIES].map(cat => (
                 <button
@@ -1581,7 +1583,7 @@ const FAQ = () => {
                 </button>
             ))}
         </div>
-    );
+    ), [selectedCategory, handleCategoryChange]);
     
     const QuestionItem = ({ item }) => (
         <div className="border-b border-gray-200 py-3">
@@ -1613,7 +1615,7 @@ const FAQ = () => {
         </div>
     );
 
-    const HistoryPanel = () => (
+    const HistoryPanel = useMemo(() => () => (
         <Card title="Historial y Favoritos" icon="🌟" className="h-full">
             <h4 className="font-bold mb-2 text-ccoored">Favoritos ({favorites.length})</h4>
             <ul className="space-y-1 text-sm mb-4 max-h-40 overflow-y-auto">
@@ -1645,7 +1647,8 @@ const FAQ = () => {
                 Enviar Sugerencia
             </IconButton>
         </Card>
-    );
+    ), [favorites, history]);
+
 
     return (
         <PageLayout title="FAQ Inteligente y Asesoría Rápida (200+ Preguntas)" logo={true}>
@@ -1719,6 +1722,44 @@ const PRL = () => {
         </div>
     );
 
+    const FormularioPRL = useMemo(() => () => (
+        <Card title="Formulario de Denuncia de Riesgos (Confidencial)" icon="✍️">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Ubicación del Riesgo (Centro de Trabajo, Puesto)</label>
+                    <input type="text" name="location" value={riskForm.location} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Tipo de Riesgo (Físico, Biológico, Acoso, Falta de EPI)</label>
+                    <input type="text" name="risk" value={riskForm.risk} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Descripción Detallada del Incumplimiento/Riesgo</label>
+                    <textarea name="description" value={riskForm.description} onChange={handleInputChange} required rows="5" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Tu Nombre Completo (Si no es anónimo)</label>
+                        <input type="text" name="name" value={riskForm.name} onChange={handleInputChange} disabled={riskForm.is_anonymous} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Tu Teléfono</label>
+                        <input type="tel" name="phone" value={riskForm.phone} onChange={handleInputChange} disabled={riskForm.is_anonymous} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                    </div>
+                </div>
+                <div className="flex items-center">
+                    <input type="checkbox" name="is_anonymous" checked={riskForm.is_anonymous} onChange={handleInputChange} id="anonymous-check" className="h-4 w-4 text-red-600 border-gray-300 rounded" />
+                    <label htmlFor="anonymous-check" className="ml-2 block text-sm font-medium text-red-700">
+                        Enviar de forma **ANÓNIMA** (Los Delegados lo tramitarán).
+                    </label>
+                </div>
+                <IconButton type="submit" className="w-full">
+                    Enviar Denuncia a Delegados de Prevención
+                </IconButton>
+            </form>
+        </Card>
+    ), [riskForm, handleInputChange, handleSubmit]);
+
     return (
         <PageLayout title="Prevención de Riesgos Laborales (PRL) y Protocolo de Acoso" logo={true}>
             <p className="text-lg mb-6 text-red-700 font-bold flex items-center">
@@ -1776,41 +1817,7 @@ const PRL = () => {
                 </div>
 
                 {/* Columna de Formulario de Denuncia de Riesgos */}
-                <Card title="Formulario de Denuncia de Riesgos (Confidencial)" icon="✍️">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Ubicación del Riesgo (Centro de Trabajo, Puesto)</label>
-                            <input type="text" name="location" value={riskForm.location} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Tipo de Riesgo (Físico, Biológico, Acoso, Falta de EPI)</label>
-                            <input type="text" name="risk" value={riskForm.risk} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Descripción Detallada del Incumplimiento/Riesgo</label>
-                            <textarea name="description" value={riskForm.description} onChange={handleInputChange} required rows="5" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Tu Nombre Completo (Si no es anónimo)</label>
-                                <input type="text" name="name" value={riskForm.name} onChange={handleInputChange} disabled={riskForm.is_anonymous} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Tu Teléfono</label>
-                                <input type="tel" name="phone" value={riskForm.phone} onChange={handleInputChange} disabled={riskForm.is_anonymous} className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                            </div>
-                        </div>
-                        <div className="flex items-center">
-                            <input type="checkbox" name="is_anonymous" checked={riskForm.is_anonymous} onChange={handleInputChange} id="anonymous-check" className="h-4 w-4 text-red-600 border-gray-300 rounded" />
-                            <label htmlFor="anonymous-check" className="ml-2 block text-sm font-medium text-red-700">
-                                Enviar de forma **ANÓNIMA** (Los Delegados lo tramitarán).
-                            </label>
-                        </div>
-                        <IconButton type="submit" className="w-full">
-                            Enviar Denuncia a Delegados de Prevención
-                        </IconButton>
-                    </form>
-                </Card>
+                <FormularioPRL />
             </div>
             
             <CustomAlert 
@@ -1824,7 +1831,7 @@ const PRL = () => {
 };
 
 // 7. CONTACTO Y AFILIACIÓN
-const Afiliacion = () => {
+const Afiliacion = ({ userId, isAuthReady, setNotification }) => {
     const [form, setForm] = useState({
         name: '', email: '', phone: '', employer: '', accepted_terms: false
     });
@@ -1886,6 +1893,52 @@ const Afiliacion = () => {
         );
     };
 
+    const FormularioAfiliacion = useMemo(() => () => (
+        <Card title="Solicitud de Afiliación Online" icon="✍️" className="lg:col-span-2">
+            <p className="text-sm text-gray-600 mb-4">
+                Rellena el formulario y nos pondremos en contacto contigo para finalizar el proceso de afiliación de forma confidencial.
+            </p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                    <input type="text" name="name" value={form.name} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" name="email" value={form.email} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+                        <input type="tel" name="phone" value={form.phone} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Empresa de Seguridad</label>
+                    <input type="text" name="employer" value={form.employer} onChange={handleInputChange} required placeholder="Ej: PROSEGUR, SECURITAS, etc." className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+                </div>
+
+                <div className="p-4 rounded-xl shadow-inner bg-red-50 border border-red-200">
+                    <h4 className="font-bold text-red-700 mb-2">Ventajas Clave de Afiliarse</h4>
+                    <ul className="list-disc ml-5 text-sm text-gray-700 space-y-1">
+                        {VENTAJS.map((v, i) => <li key={i}>{v}</li>)}
+                    </ul>
+                </div>
+
+                <div className="flex items-center">
+                    <input type="checkbox" name="accepted_terms" checked={form.accepted_terms} onChange={handleInputChange} required id="terms-check" className="h-4 w-4 text-red-600 border-gray-300 rounded" />
+                    <label htmlFor="terms-check" className="ml-2 block text-sm font-medium text-gray-700">
+                        Acepto la Política de Privacidad y deseo que CCOO me contacte para formalizar mi afiliación.
+                    </label>
+                </div>
+
+                <IconButton type="submit" className="w-full">
+                    Enviar Solicitud de Contacto
+                </IconButton>
+            </form>
+        </Card>
+    ), [form, handleInputChange, handleSubmit]);
+
     return (
         <PageLayout title="Contacto y Afiliación CCOO Vigilantes" logo={true}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1922,49 +1975,7 @@ const Afiliacion = () => {
                 </div>
 
                 {/* Columna de Formulario de Afiliación */}
-                <Card title="Solicitud de Afiliación Online" icon="✍️" className="lg:col-span-2">
-                    <p className="text-sm text-gray-600 mb-4">
-                        Rellena el formulario y nos pondremos en contacto contigo para finalizar el proceso de afiliación de forma confidencial.
-                    </p>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                            <input type="text" name="name" value={form.name} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Email</label>
-                                <input type="email" name="email" value={form.email} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Teléfono</label>
-                                <input type="tel" name="phone" value={form.phone} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Empresa de Seguridad</label>
-                            <input type="text" name="employer" value={form.employer} onChange={handleInputChange} required placeholder="Ej: PROSEGUR, SECURITAS, etc." className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
-                        </div>
-
-                        <div className="p-4 rounded-xl shadow-inner bg-red-50 border border-red-200">
-                            <h4 className="font-bold text-red-700 mb-2">Ventajas Clave de Afiliarse</h4>
-                            <ul className="list-disc ml-5 text-sm text-gray-700 space-y-1">
-                                {VENTAJS.map((v, i) => <li key={i}>{v}</li>)}
-                            </ul>
-                        </div>
-
-                        <div className="flex items-center">
-                            <input type="checkbox" name="accepted_terms" checked={form.accepted_terms} onChange={handleInputChange} required id="terms-check" className="h-4 w-4 text-red-600 border-gray-300 rounded" />
-                            <label htmlFor="terms-check" className="ml-2 block text-sm font-medium text-gray-700">
-                                Acepto la Política de Privacidad y deseo que CCOO me contacte para formalizar mi afiliación.
-                            </label>
-                        </div>
-
-                        <IconButton type="submit" className="w-full">
-                            Enviar Solicitud de Contacto
-                        </IconButton>
-                    </form>
-                </Card>
+                <FormularioAfiliacion />
             </div>
             
             <CustomAlert 
