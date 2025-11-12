@@ -36,6 +36,18 @@
             font-family: 'Inter', sans-serif;
             background-color: #f9fafb; /* gray-50 */
         }
+        /* Configuración de PWA y mobile-first (Viewport adaptativo) */
+        .page-container {
+            width: 100%;
+            max-width: 100%; /* Asegura que no haya scroll horizontal en móvil */
+            padding: 1rem; /* p-4 */
+        }
+        @media (min-width: 1024px) {
+            .page-container {
+                padding: 2rem; /* lg:p-8 */
+                max-width: 80rem;
+            }
+        }
         /* Estilo para Scrollbar (opcional, mejora estética) */
         ::-webkit-scrollbar {
             width: 8px;
@@ -77,8 +89,6 @@ let app, db, auth;
 if (Object.keys(firebaseConfig).length > 0 && typeof initializeApp !== 'undefined') {
   try {
     app = initializeApp(firebaseConfig);
-    // Para ver logs detallados de firebase
-    // setLogLevel('Debug');
     db = getFirestore(app);
     auth = getAuth(app);
   } catch (error) {
@@ -96,23 +106,25 @@ const FA_PHONE = '34600317787';
 
 const PageLayout = ({ children, title, logo = true, bgColorClass = 'bg-white', actions = null, navigate }) => (
   <div className={`min-h-screen ${bgColorClass} text-gray-800 font-sans`}>
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="page-container mx-auto">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4 border-red-200">
-        <h1 className="text-xl sm:text-2xl font-extrabold text-red-700 tracking-tight flex items-center mb-4 sm:mb-0">
-          {logo && <span className="inline-block mr-3 text-2xl" style={{ color: CCOO_RED }}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6v2.93zM12 4c3.95.49 7 3.85 7 7.93h-2c0-3.31-2.69-6-6-6V4z"/>
-            </svg>
-          </span>}
-          {title}
-          <div className="ml-4 flex items-center text-gray-500 text-sm font-normal space-x-4">
-            <span className="flex items-center">JR: <a href={`tel:${JR_PHONE}`} className="ml-1 hover:underline">{JR_PHONE.substring(2)}</a></span>
-            <span className="flex items-center">FA: <a href={`tel:${FA_PHONE}`} className="ml-1 hover:underline">{FA_PHONE.substring(2)}</a></span>
+        <h1 className="text-xl sm:text-2xl font-extrabold text-red-700 tracking-tight flex flex-col items-start mb-4 sm:mb-0">
+          <div className="flex items-center">
+            {logo && <span className="inline-block mr-3 text-2xl" style={{ color: CCOO_RED }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6v2.93zM12 4c3.95.49 7 3.85 7 7.93h-2c0-3.31-2.69-6-6-6V4z"/>
+              </svg>
+            </span>}
+            {title}
+          </div>
+          <div className="flex flex-wrap items-center text-gray-500 text-sm font-normal mt-1 ml-1 sm:ml-10 space-x-2 sm:space-x-4">
+            <span className="flex items-center">JR: <a href={`tel:${JR_PHONE}`} className="ml-1 hover:underline font-semibold">{JR_PHONE.substring(2)}</a></span>
+            <span className="flex items-center">FA: <a href={`tel:${FA_PHONE}`} className="ml-1 hover:underline font-semibold">{FA_PHONE.substring(2)}</a></span>
           </div>
         </h1>
         <div className="flex-shrink-0 flex space-x-4 items-center">
             <IconButton 
-                onClick={() => navigate('Citas')} 
+                onClick={() => navigate('PRL')} 
                 color="#04844B" // Green for WhatsApp
                 className="text-sm px-4 py-2 flex items-center shadow-lg"
             >
@@ -643,7 +655,7 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // CLAVE: Corregido para que el estado se actualice correctamente en cada input.
+    // CORRECCIÓN CLAVE: Asegura la actualización correcta del estado en cada pulsación.
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -945,12 +957,13 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
 // 3. CALCULADORA NÓMINAS 2026 AVANZADA
 const Nominas = () => {
   const [form, setForm] = useState({
-    category: 'Vigilante Seguridad', antigüedad: 0, extra_hours: 0, nocturnity_hours: 0, irpf_percent: 15, prorrateo: 'No', festivos: 0,
+    category: 'Vigilante Seguridad', antigüedad: 0, extra_hours: 0, nocturnity_hours: 0, irpf_percent: 15, prorrateo: 'No', festivos: 0, residencia_melilla: 'No',
   });
   const [trienios, setTrienios] = useState(0);
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
+    // CORRECCIÓN CLAVE: Asegura la actualización correcta del estado en cada pulsación.
     setForm(prev => ({ ...prev, [name]: type === 'number' ? Number(value) : value }));
 
     if (name === 'antigüedad') {
@@ -960,7 +973,7 @@ const Nominas = () => {
   };
 
   const calculateNomina = useMemo(() => {
-    const { category, extra_hours, nocturnity_hours, irpf_percent, prorrateo, festivos } = form;
+    const { category, extra_hours, nocturnity_hours, irpf_percent, prorrateo, festivos, residencia_melilla } = form;
     const baseData = SALARIOS_2026[category];
     if (!baseData) return null;
 
@@ -968,13 +981,14 @@ const Nominas = () => {
     const salario_base = baseData.base;
     const plus_actividad = baseData.actividad;
     const plus_antiguedad = trienios * 0.05 * salario_base; // 5% por trienio
+    const plus_residencia = residencia_melilla === 'Sí' ? salario_base * 0.25 : 0; // 25% del salario base para Melilla
 
     let pagas_extras_prorrateadas = 0;
-    const total_base = salario_base + plus_actividad + plus_antiguedad;
+    const total_base = salario_base + plus_actividad + plus_antiguedad + plus_residencia;
 
     if (prorrateo === 'Sí') {
-      // 3 Pagas Extras: Salario Base + Plus Actividad + Antigüedad
-      const extra_pay_amount = salario_base + plus_actividad + plus_antiguedad; 
+      // 3 Pagas Extras: Salario Base + Plus Actividad + Antigüedad + Plus Residencia (si aplica)
+      const extra_pay_amount = salario_base + plus_actividad + plus_antiguedad + plus_residencia; 
       pagas_extras_prorrateadas = (extra_pay_amount * 3) / 12;
     }
 
@@ -1006,9 +1020,10 @@ const Nominas = () => {
     const neto = total_devengos - total_deducciones;
 
     // Resumen Anual (simulación simple: 12x + 3 extras si no prorrateadas)
-    const annual_devengos_monthly = (salario_base + plus_actividad + plus_antiguedad + devengos_variables) * 12;
-    const annual_extra_pays = prorrateo === 'No' ? (salario_base + plus_actividad + plus_antiguedad) * 3 : 0;
-    const annual_devengos = annual_devengos_monthly + annual_extra_pays;
+    const annual_base_for_extras = salario_base + plus_actividad + plus_antiguedad + plus_residencia;
+    const annual_devengos_monthly = (annual_base_for_extras) * 12;
+    const annual_extra_pays = prorrateo === 'No' ? (annual_base_for_extras) * 3 : 0;
+    const annual_devengos = annual_devengos_monthly + annual_extra_pays + (devengos_variables * 12);
     const annual_ss = ss_deduction * 12;
 
     let annual_irpf_rate = 0;
@@ -1026,8 +1041,10 @@ const Nominas = () => {
 
 
     return {
-      total_base,
+      salario_base,
+      plus_actividad,
       plus_antiguedad,
+      plus_residencia,
       pagas_extras_prorrateadas,
       hour_value_extra,
       devengos_fijos: devengos_fijos.toFixed(2),
@@ -1059,13 +1076,15 @@ const Nominas = () => {
       <h1 style="color: ${CCOO_RED}; font-size: 24px; margin-bottom: 20px;">Desglose de Nómina CCOO Vigilantes (2026)</h1>
       <p><strong>Categoría:</strong> ${form.category}</p>
       <p><strong>Antigüedad (Trienios):</strong> ${trienios}</p>
+      <p><strong>Plus Residencia Melilla:</strong> ${form.residencia_melilla === 'Sí' ? 'Sí (25% Salario Base)' : 'No'}</p>
       <p><strong>Pagas Extras:</strong> ${form.prorrateo === 'Sí' ? 'Prorrateadas (3/año)' : 'No Prorrateadas (Jun, Sep, Dic)'}</p>
       <hr style="margin: 20px 0; border-top: 1px solid #ccc;">
 
       <h2 style="font-size: 20px; color: ${CCOO_GRAY}; margin-bottom: 10px;">I. DEVENGOS MENSUALES</h2>
-      <p>Salario Base: ${SALARIOS_2026[form.category].base.toFixed(2)} €</p>
-      <p>Plus Actividad: ${SALARIOS_2026[form.category].actividad.toFixed(2)} €</p>
+      <p>Salario Base: ${data.salario_base.toFixed(2)} €</p>
+      <p>Plus Actividad: ${data.plus_actividad.toFixed(2)} €</p>
       <p>Plus Antigüedad: ${data.plus_antiguedad.toFixed(2)} €</p>
+      <p>Plus Residencia Melilla: ${data.plus_residencia.toFixed(2)} €</p>
       <p>Pagas Extras Prorrateadas: ${data.pagas_extras_prorrateadas.toFixed(2)} €</p>
       <p>TOTAL DEVENGOS FIJOS: ${data.devengos_fijos} €</p>
       
@@ -1119,6 +1138,15 @@ const Nominas = () => {
                 {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
+            {/* NUEVA OPCIÓN: PLUS DE RESIDENCIA MELILLA */}
+            <div className="flex justify-between items-center p-2 border rounded-lg bg-blue-50">
+                <label className="text-sm font-bold text-blue-700">Plus de Residencia (Melilla - 25%)</label>
+                <select name="residencia_melilla" value={form.residencia_melilla} onChange={handleInputChange} className="rounded-lg border-blue-300 p-1 text-sm font-semibold text-blue-700 bg-blue-100">
+                    <option value="No">No</option>
+                    <option value="Sí">Sí</option>
+                </select>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Años de Antigüedad en la Empresa (Trienios: {trienios})</label>
               <input type="number" name="antigüedad" value={form.antigüedad} onChange={handleInputChange} min="0" max="30" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
@@ -1155,9 +1183,10 @@ const Nominas = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-bold mb-2 text-ccoored">I. DEVENGOS</h3>
-                <ResultRow label="Salario Base" value={SALARIOS_2026[form.category].base.toFixed(2)} />
-                <ResultRow label="Plus Actividad" value={SALARIOS_2026[form.category].actividad.toFixed(2)} />
+                <ResultRow label="Salario Base" value={calculateNomina.salario_base.toFixed(2)} />
+                <ResultRow label="Plus Actividad" value={calculateNomina.plus_actividad.toFixed(2)} />
                 <ResultRow label="Plus Antigüedad" value={calculateNomina.plus_antiguedad.toFixed(2)} />
+                <ResultRow label="Plus Residencia (Melilla)" value={calculateNomina.plus_residencia.toFixed(2)} />
                 <ResultRow label="Pagas Extras Prorrateadas (3/12)" value={calculateNomina.pagas_extras_prorrateadas.toFixed(2)} />
                 <ResultRow label="Horas Extra (75%)" value={(calculateNomina.hour_value_extra * form.extra_hours).toFixed(2)} />
                 <ResultRow label="Plus Nocturnidad (Sim.)" value={(calculateNomina.total_devengos - calculateNomina.devengos_fijos - (calculateNomina.hour_value_extra * form.extra_hours) - (calculateNomina.festivos * 40)).toFixed(2)} />
