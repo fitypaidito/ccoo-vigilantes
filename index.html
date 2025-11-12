@@ -767,33 +767,7 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
     }
   };
 
-  const getDayClass = (date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dateStr = date.toISOString().split('T')[0];
-    let classes = 'p-2 text-center rounded-xl cursor-pointer transition-all duration-200 shadow-sm';
-
-    if (date.getDay() === 0 || date.getDay() === 6 || date < today) {
-        classes += ' bg-gray-200 text-gray-500 cursor-not-allowed opacity-50';
-    } else if (dateStr === form.date) {
-        classes += ' bg-red-700 text-white font-bold ring-2 ring-red-900';
-    } else {
-        classes += ' bg-gray-50 hover:bg-red-100';
-    }
-
-    // Lógica para mostrar disponibilidad (simulada)
-    const availableToday = getAvailableSlots.filter(slot => slot.time.startsWith(dateStr)).length;
-    const totalSlots = 20; // Supuesto total para la simulación de lleno/casi lleno
-
-    if (availableToday === 0 && date >= today) {
-        classes += ' border-2 border-red-500 bg-red-200'; // Lleno
-    } else if (availableToday < totalSlots / 2 && date >= today) {
-        classes += ' border-2 border-yellow-500'; // Casi lleno
-    }
-    
-    return classes;
-  };
-
+  // 1. Componente de Calendario Aislado (DayPicker) para estabilizar el renderizado
   const DayPicker = () => {
     const [month, setMonth] = useState(new Date().getMonth());
     const [year, setYear] = useState(new Date().getFullYear());
@@ -806,8 +780,7 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
       days.push(new Date(year, month, i));
     }
 
-    const startDay = firstDayOfMonth.getDay() === 0 ? 6 : firstDayOfMonth.getDay() - 1; // 0=Dom, 1=Lun, ..., 6=Sab. Ajustar a Lun=0.
-
+    const startDay = firstDayOfMonth.getDay() === 0 ? 6 : firstDayOfMonth.getDay() - 1; 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -820,6 +793,26 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
     const nextMonth = () => {
       setMonth(prev => prev + 1);
     };
+
+    const getDayClass = (date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dateStr = date.toISOString().split('T')[0];
+        let classes = 'p-2 text-center rounded-xl cursor-pointer transition-all duration-200 shadow-sm';
+
+        if (date.getDay() === 0 || date.getDay() === 6 || date < today) {
+            classes += ' bg-gray-200 text-gray-500 cursor-not-allowed opacity-50';
+        } else if (dateStr === form.date) {
+            classes += ' bg-red-700 text-white font-bold ring-2 ring-red-900';
+        } else {
+            classes += ' bg-gray-50 hover:bg-red-100';
+        }
+        
+        // Lógica de disponibilidad (simplificada para el calendario)
+        // Se usarían getAvailableSlots aquí si DayPicker no estuviera aislado, pero se mantiene simple
+        return classes;
+    };
+
 
     return (
       <Card title="1. Selecciona Fecha" icon="📅">
@@ -887,6 +880,7 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
+          {/* CRÍTICO: El value debe ser enlazado directamente a form.name */}
           <input type="text" name="name" value={form.name} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1139,13 +1133,9 @@ const Nominas = () => {
 
   const categories = Object.keys(SALARIOS_2026);
 
-  return (
-    <PageLayout title="Calculadora de Nóminas 2026 Avanzada" logo={true}>
-      <p className="text-lg mb-6">
-        Simula tu nómina mensual y anual con los datos del Convenio 2023-2026 (Salarios 2026 aplicados). La antigüedad se calcula por **quinquenios** (5% cada 5 años).
-      </p>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  // Componente Nominas memoizado
+  const NominasContent = useMemo(() => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna de Input */}
         <Card title="Datos de Cálculo" icon="⚙️" className="lg:col-span-1">
           <div className="space-y-4">
@@ -1240,6 +1230,14 @@ const Nominas = () => {
           )}
         </Card>
       </div>
+  ), [form, quinquenios, calculateNomina, handleInputChange]);
+
+  return (
+    <PageLayout title="Calculadora de Nóminas 2026 Avanzada" logo={true}>
+      <p className="text-lg mb-6">
+        Simula tu nómina mensual y anual con los datos del Convenio 2023-2026 (Salarios 2026 aplicados). La antigüedad se calcula por **quinquenios** (5% cada 5 años).
+      </p>
+      <NominasContent />
     </PageLayout>
   );
 };
@@ -1429,6 +1427,54 @@ const Escritos = () => {
         </div>
     );
 
+    const EscritosContent = useMemo(() => (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Columna de Selección */}
+            <Card title="Modelos Disponibles (15+)" icon="📚" className="lg:col-span-1">
+                <ul className="space-y-2 max-h-96 overflow-y-auto">
+                    {ESCRITOS_MODELS.map(escrito => (
+                        <li 
+                            key={escrito.id} 
+                            onClick={() => setSelectedEscrito(escrito)}
+                            className={`p-3 rounded-xl cursor-pointer transition-colors border shadow-sm ${selectedEscrito.id === escrito.id ? 'bg-red-100 border-red-500 font-bold text-red-800' : 'hover:bg-gray-50'}`}
+                        >
+                            <span className="text-xs font-semibold block">{escrito.legal}</span>
+                            {escrito.title}
+                        </li>
+                    ))}
+                </ul>
+            </Card>
+
+            {/* Columna de Formulario */}
+            <Card title={`Rellenar: ${selectedEscrito.title}`} icon="✍️" className="lg:col-span-2">
+                <p className="text-sm text-gray-600 mb-4">
+                    Fundamento: <strong>{selectedEscrito.legal}</strong>
+                </p>
+                <div className="space-y-4">
+                    {selectedEscrito.fields.map(field => (
+                        <div key={field}>
+                            <label className="block text-sm font-medium text-gray-700 capitalize">
+                                {field.replace(/_/g, ' ').replace('acoso tipo', 'Tipo de Acoso').replace('fecha inicio dias', 'Fecha Inicio')}
+                            </label>
+                            <input 
+                                type={field.includes('fecha') ? 'date' : field.includes('importe') ? 'number' : 'text'} 
+                                name={field} 
+                                value={formData[field] || ''} 
+                                onChange={handleFieldChange} 
+                                required 
+                                placeholder={`Introduce ${field.replace(/_/g, ' ')}...`}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border" 
+                            />
+                        </div>
+                    ))}
+                </div>
+                <IconButton onClick={handleGenerate} className="w-full mt-6">
+                    Generar Escrito
+                </IconButton>
+            </Card>
+        </div>
+    ), [selectedEscrito, formData, handleFieldChange]);
+
     return (
         <PageLayout title="Generador de Escritos Legales" logo={true}>
             <p className="text-lg mb-6">
@@ -1437,51 +1483,7 @@ const Escritos = () => {
 
             {selectedEscrito.is_urgent && <UrgentAlert title={selectedEscrito.title.replace('🚨 Denuncia ', '').toUpperCase()} />}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Columna de Selección */}
-                <Card title="Modelos Disponibles (15+)" icon="📚" className="lg:col-span-1">
-                    <ul className="space-y-2 max-h-96 overflow-y-auto">
-                        {ESCRITOS_MODELS.map(escrito => (
-                            <li 
-                                key={escrito.id} 
-                                onClick={() => setSelectedEscrito(escrito)}
-                                className={`p-3 rounded-xl cursor-pointer transition-colors border shadow-sm ${selectedEscrito.id === escrito.id ? 'bg-red-100 border-red-500 font-bold text-red-800' : 'hover:bg-gray-50'}`}
-                            >
-                                <span className="text-xs font-semibold block">{escrito.legal}</span>
-                                {escrito.title}
-                            </li>
-                        ))}
-                    </ul>
-                </Card>
-
-                {/* Columna de Formulario */}
-                <Card title={`Rellenar: ${selectedEscrito.title}`} icon="✍️" className="lg:col-span-2">
-                    <p className="text-sm text-gray-600 mb-4">
-                        Fundamento: <strong>{selectedEscrito.legal}</strong>
-                    </p>
-                    <div className="space-y-4">
-                        {selectedEscrito.fields.map(field => (
-                            <div key={field}>
-                                <label className="block text-sm font-medium text-gray-700 capitalize">
-                                    {field.replace(/_/g, ' ').replace('acoso tipo', 'Tipo de Acoso').replace('fecha inicio dias', 'Fecha Inicio')}
-                                </label>
-                                <input 
-                                    type={field.includes('fecha') ? 'date' : field.includes('importe') ? 'number' : 'text'} 
-                                    name={field} 
-                                    value={formData[field] || ''} 
-                                    onChange={handleFieldChange} 
-                                    required 
-                                    placeholder={`Introduce ${field.replace(/_/g, ' ')}...`}
-                                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border" 
-                                />
-                            </div>
-                        ))}
-                    </div>
-                    <IconButton onClick={handleGenerate} className="w-full mt-6">
-                        Generar Escrito
-                    </IconButton>
-                </Card>
-            </div>
+            <EscritosContent />
 
             {/* Modal de Resultado */}
             <Modal title={selectedEscrito.title} open={modalOpen} onClose={() => setModalOpen(false)}>
@@ -2082,4 +2084,4 @@ root.render(<App />);
 
     </script>
 </body>
-</html>
+</html
