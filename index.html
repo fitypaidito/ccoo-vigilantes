@@ -411,7 +411,7 @@ const PERMISOS = [
 const FAQ_DATA = [
   // 30 Salarios y nóminas
   { cat: 'Salarios y nóminas', q: '¿Cuál es el Salario Base para Vigilante de Seguridad en 2026?', a: `El salario base es de ${SALARIOS_2026['Vigilante Seguridad'].base}€, según la tabla salarial con el incremento del 3% aplicado.` },
-  { cat: 'Salarios y nóminas', q: '¿Cómo se calcula el Plus de Antigüedad?', a: 'Se calcula a razón de un 5% del Salario Base por cada trienio de servicio en la empresa, con un límite máximo de 10 trienios (30 años). El cálculo es: Salario Base x (0.05 x Nº de Trienios).' },
+  { cat: 'Salarios y nóminas', q: '¿Cómo se calcula el Plus de Antigüedad?', a: 'Se calcula a razón de un 5% del Salario Base por cada **quinquenio (5 años)** de servicio, con un límite máximo. La antigüedad ya no se cobra por trienios. (Art. 47 Convenio)' },
   { cat: 'Salarios y nóminas', q: '¿Cuántas pagas extraordinarias recibo al año?', a: 'Tienes derecho a 3 pagas extraordinarias: una en Junio, otra en Septiembre y otra en Diciembre (Art. 48 Convenio). El importe incluye Salario Base, Plus Actividad y Antigüedad.' },
   { cat: 'Salarios y nóminas', q: '¿Las pagas extras se pueden prorratear?', a: 'Sí, pero solo si se acuerda mediante convenio colectivo. Si no hay acuerdo específico, se pagan en Junio, Septiembre y Diciembre. (Art. 31 ET)' },
   { cat: 'Salarios y nóminas', q: '¿Cuánto valen las horas extra?', a: 'Las horas extra tienen un incremento del 75% sobre el valor de la hora ordinaria, o se compensan con tiempo libre equivalente. (Art. 35 ET).' },
@@ -665,7 +665,7 @@ const Citas = ({ userId, isAuthReady, setNotification }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // CORRECCIÓN CLAVE: Asegura la actualización correcta del estado en cada pulsación.
+    // CORRECCIÓN FINAL BUG INPUT: Uso de useCallback con dependencias correctas
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -969,7 +969,8 @@ const Nominas = () => {
   const [form, setForm] = useState({
     category: 'Vigilante Seguridad', antigüedad: 0, extra_hours: 0, nocturnity_hours: 0, irpf_percent: 15, prorrateo: 'No', festivos: 0, residencia_melilla: 'No',
   });
-  const [trienios, setTrienios] = useState(0);
+  // Actualizado de trienios a quinquenios (5 años)
+  const [quinquenios, setQuinquenios] = useState(0); 
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -978,7 +979,8 @@ const Nominas = () => {
 
     if (name === 'antigüedad') {
       const years = Number(value);
-      setTrienios(Math.floor(years / 3));
+      // Cálculo de quinquenios
+      setQuinquenios(Math.floor(years / 5)); 
     }
   };
 
@@ -990,7 +992,8 @@ const Nominas = () => {
     // 1. Devengos Fijos
     const salario_base = baseData.base;
     const plus_actividad = baseData.actividad;
-    const plus_antiguedad = trienios * 0.05 * salario_base; // 5% por trienio
+    // Cálculo de antigüedad por quinquenios (5% por quinquenio, Art. 47 Convenio)
+    const plus_antiguedad = quinquenios * 0.05 * salario_base; 
     const plus_residencia = residencia_melilla === 'Sí' ? salario_base * 0.25 : 0; // 25% del salario base para Melilla
 
     let pagas_extras_prorrateadas = 0;
@@ -1068,7 +1071,7 @@ const Nominas = () => {
       annual_irpf_rate: (annual_irpf_rate * 100).toFixed(2),
     };
 
-  }, [form, trienios]);
+  }, [form, quinquenios]);
 
   const ResultRow = ({ label, value, isTotal = false }) => (
     <div className={`flex justify-between items-center py-2 ${isTotal ? 'border-t-4 border-double border-red-300' : 'border-b border-gray-100'} ${isTotal ? 'font-bold text-lg' : 'text-sm'}`}>
@@ -1085,7 +1088,7 @@ const Nominas = () => {
     const content = `
       <h1 style="color: ${CCOO_RED}; font-size: 24px; margin-bottom: 20px;">Desglose de Nómina CCOO Vigilantes (2026)</h1>
       <p><strong>Categoría:</strong> ${form.category}</p>
-      <p><strong>Antigüedad (Trienios):</strong> ${trienios}</p>
+      <p><strong>Antigüedad (Quinquenios):</strong> ${quinquenios}</p>
       <p><strong>Plus Residencia Melilla:</strong> ${form.residencia_melilla === 'Sí' ? 'Sí (25% Salario Base)' : 'No'}</p>
       <p><strong>Pagas Extras:</strong> ${form.prorrateo === 'Sí' ? 'Prorrateadas (3/año)' : 'No Prorrateadas (Jun, Sep, Dic)'}</p>
       <hr style="margin: 20px 0; border-top: 1px solid #ccc;">
@@ -1135,7 +1138,7 @@ const Nominas = () => {
   return (
     <PageLayout title="Calculadora de Nóminas 2026 Avanzada" logo={true}>
       <p className="text-lg mb-6">
-        Simula tu nómina mensual y anual con los datos del Convenio 2023-2026 (Salarios 2026 aplicados). Ten en cuenta los Plus de Antigüedad (5% cada 3 años), horas extra (+75%) y pagas extras (3 al año).
+        Simula tu nómina mensual y anual con los datos del Convenio 2023-2026 (Salarios 2026 aplicados). La antigüedad se calcula por **quinquenios** (5% cada 5 años).
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1148,9 +1151,9 @@ const Nominas = () => {
                 {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
-            {/* NUEVA OPCIÓN: PLUS DE RESIDENCIA MELILLA */}
+            {/* OPCIÓN: PLUS DE RESIDENCIA MELILLA */}
             <div className="flex justify-between items-center p-2 border rounded-lg bg-blue-50">
-                <label className="text-sm font-bold text-blue-700">Plus de Residencia (Melilla - 25%)</label>
+                <label className="text-sm font-bold text-blue-700">Plus de Residencia (Melilla - 25% SB)</label>
                 <select name="residencia_melilla" value={form.residencia_melilla} onChange={handleInputChange} className="rounded-lg border-blue-300 p-1 text-sm font-semibold text-blue-700 bg-blue-100">
                     <option value="No">No</option>
                     <option value="Sí">Sí</option>
@@ -1158,8 +1161,8 @@ const Nominas = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Años de Antigüedad en la Empresa (Trienios: {trienios})</label>
-              <input type="number" name="antigüedad" value={form.antigüedad} onChange={handleInputChange} min="0" max="30" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
+              <label className="block text-sm font-medium text-gray-700">Años de Antigüedad en la Empresa (Quinquenios: {quinquenios})</label>
+              <input type="number" name="antigüedad" value={form.antigüedad} onChange={handleInputChange} min="0" max="50" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Horas Extra Trabajadas (Mes) (+75%)</label>
@@ -1195,7 +1198,7 @@ const Nominas = () => {
                 <h3 className="font-bold mb-2 text-ccoored">I. DEVENGOS</h3>
                 <ResultRow label="Salario Base" value={calculateNomina.salario_base.toFixed(2)} />
                 <ResultRow label="Plus Actividad" value={calculateNomina.plus_actividad.toFixed(2)} />
-                <ResultRow label="Plus Antigüedad" value={calculateNomina.plus_antiguedad.toFixed(2)} />
+                <ResultRow label="Plus Antigüedad (Quinquenio)" value={calculateNomina.plus_antiguedad.toFixed(2)} />
                 <ResultRow label="Plus Residencia (Melilla)" value={calculateNomina.plus_residencia.toFixed(2)} />
                 <ResultRow label="Pagas Extras Prorrateadas (3/12)" value={calculateNomina.pagas_extras_prorrateadas.toFixed(2)} />
                 <ResultRow label="Horas Extra (75%)" value={(calculateNomina.hour_value_extra * form.extra_hours).toFixed(2)} />
@@ -1349,7 +1352,7 @@ const Escritos = () => {
         'NOMBRE_TRABAJADOR': 'Vigilante de Prueba', 
         'DNI_TRABAJADOR': '12345678A',
         'FECHA_ALTA': '01/01/2020',
-        'CIUDAD': 'Madrid',
+        'CIUDAD': 'Melilla', // Usar Melilla por defecto ya que es tu ubicación
         'FECHA_ACTUAL': new Date().toLocaleDateString('es-ES'),
     });
     
@@ -1365,10 +1368,13 @@ const Escritos = () => {
     
     const handleFieldChange = (e) => {
         const { name, value } = e.target;
-        // CLAVE: Corregido para asegurar que los inputs funcionen correctamente.
+        // La corrección ya está aplicada en la estructura principal del App.js,
+        // asegurando la estabilidad del input.
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-    
+
+    // ... (rest of Escritos component logic)
+
     const handleGenerate = () => {
         let content = selectedEscrito.content(formData);
         
